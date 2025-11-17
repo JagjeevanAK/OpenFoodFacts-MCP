@@ -1,5 +1,8 @@
-import axios from 'axios';
+import { OpenFoodFacts } from '@openfoodfacts/openfoodfacts-nodejs';
 import { logger } from '../transport/transports.js';
+
+// Create SDK client instance
+const client = new OpenFoodFacts(globalThis.fetch);
 
 // Interface for the mapped product in search results
 export interface SearchProductItem {
@@ -62,25 +65,30 @@ export async function searchProducts(query: string, page: number = 1, pageSize: 
       }
     }
 
-    // Make API request to Open Food Facts search API
-    const response = await axios.get('https://world.openfoodfacts.org/cgi/search.pl', {
-      params: {
-        search_terms: query,
-        page,
-        page_size: pageSize,
-        json: 1
-      },
-      timeout: 30000 // 30 second timeout
-    });
+    // For general text search, use fetch directly with the search API
+    // The SDK doesn't expose search_terms parameter in its TypeScript types
+    const searchUrl = new URL('https://world.openfoodfacts.org/cgi/search.pl');
+    searchUrl.searchParams.set('search_terms', query);
+    searchUrl.searchParams.set('page', page.toString());
+    searchUrl.searchParams.set('page_size', pageSize.toString());
+    searchUrl.searchParams.set('json', '1');
+    
+    const response = await fetch(searchUrl.toString());
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status} - ${response.statusText}`);
+    }
+    
+    const data = await response.json();
 
     // Check if the response is valid
-    if (!response.data || !Array.isArray(response.data.products)) {
+    if (!data || !Array.isArray(data.products)) {
       throw new Error('Invalid response from Open Food Facts API');
     }
 
     // Return the products from the response with pagination info
     return {
-      products: response.data.products.map((product: any): SearchProductItem => ({
+      products: data.products.map((product: any): SearchProductItem => ({
         id: product.id || product._id,
         name: product.product_name || 'Unknown product',
         brand: product.brands || 'Unknown brand',
@@ -90,21 +98,13 @@ export async function searchProducts(query: string, page: number = 1, pageSize: 
         ingredients: product.ingredients_text || '',
         categories: product.categories || ''
       })),
-      count: response.data.count || 0,
+      count: data.count || 0,
       page,
       pageSize,
-      pageCount: Math.ceil((response.data.count || 0) / pageSize)
+      pageCount: Math.ceil((data.count || 0) / pageSize)
     } as SearchProductsResult;
   } catch (error) {
     logger.error('Error searching products:', error);
-    if (axios.isAxiosError(error)) {
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Search request timed out. Please try again.');
-      }
-      if (error.response) {
-        throw new Error(`API error: ${error.response.status} - ${error.response.statusText}`);
-      }
-    }
     throw new Error(`Failed to search products: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -121,51 +121,46 @@ export async function getProductByBarcode(barcode: string) {
       throw new Error('Invalid barcode format. Expected 8-14 digits.');
     }
 
-    // Make API request to Open Food Facts product API
-    const response = await axios.get(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
-      timeout: 30000 // 30 second timeout
+    // Use the SDK's getProduct method (V3 API) - using 'all' to get all fields
+    const result = await client.getProductV3(barcode, {
+      fields: ['all']
     });
 
-    // Check if product was found
-    if (response.data.status === 0) {
+    // Check if product was found - check for error or no data
+    if (result.error || !result.data || result.data.status === 'failure') {
       throw new Error(`Product with barcode ${barcode} not found`);
     }
 
+    // Cast to any for easier access to fields since the SDK typing is complex
+    const product: any = result.data;
+
     // Return the product information with selected fields
     return {
-      id: response.data.product._id,
-      barcode: response.data.product.code,
-      name: response.data.product.product_name || 'Unknown product',
-      brands: response.data.product.brands,
-      ingredients: response.data.product.ingredients_text,
-      allergens: response.data.product.allergens,
-      nutriScore: response.data.product.nutriscore_grade,
-      novaGroup: response.data.product.nova_group,
-      imageUrl: response.data.product.image_url,
+      id: product._id || barcode,
+      barcode: product.code || barcode,
+      name: product.product_name || 'Unknown product',
+      brands: product.brands,
+      ingredients: product.ingredients_text,
+      allergens: product.allergens,
+      nutriScore: product.nutriscore_grade,
+      novaGroup: product.nova_group,
+      imageUrl: product.selected_images?.front?.display?.en || product.image_url || '',
       nutritionFacts: {
-        energy: response.data.product.nutriments['energy-kcal_100g'],
-        fat: response.data.product.nutriments.fat_100g,
-        saturatedFat: response.data.product.nutriments['saturated-fat_100g'],
-        carbohydrates: response.data.product.nutriments.carbohydrates_100g,
-        sugars: response.data.product.nutriments.sugars_100g,
-        fiber: response.data.product.nutriments.fiber_100g,
-        proteins: response.data.product.nutriments.proteins_100g,
-        salt: response.data.product.nutriments.salt_100g
+        energy: product.nutriments?.['energy-kcal_100g'],
+        fat: product.nutriments?.fat_100g,
+        saturatedFat: product.nutriments?.['saturated-fat_100g'],
+        carbohydrates: product.nutriments?.carbohydrates_100g,
+        sugars: product.nutriments?.sugars_100g,
+        fiber: product.nutriments?.fiber_100g,
+        proteins: product.nutriments?.proteins_100g,
+        salt: product.nutriments?.salt_100g
       },
-      labels: response.data.product.labels,
-      categories: response.data.product.categories,
-      countries: response.data.product.countries
+      labels: product.labels,
+      categories: product.categories,
+      countries: product.countries
     };
   } catch (error) {
     logger.error('Error fetching product:', error);
-    if (axios.isAxiosError(error)) {
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Request timed out. Please try again.');
-      }
-      if (error.response) {
-        throw new Error(`API error: ${error.response.status} - ${error.response.statusText}`);
-      }
-    }
     throw new Error(error instanceof Error ? error.message : 'Failed to get product details');
   }
 }

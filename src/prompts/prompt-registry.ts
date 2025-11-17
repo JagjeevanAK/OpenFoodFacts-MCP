@@ -4,14 +4,11 @@ import { projectRoot } from "../config/server-config.js";
 import fs from 'fs';
 import path from 'path';
 
-// Mark prompts as developer-specific or not
 interface ExtendedPrompt extends Prompt {
   developerOnly?: boolean;
 }
 
-// Define prompts related to food product information
 export const PROMPTS: Record<string, ExtendedPrompt> = {
-  // Product analysis prompts - standard mode (available to all users)
   "analyze-product": {
     name: "analyze-product",
     description: "Analyze a food product based on its barcode",
