@@ -1,1 +1,1 @@
-export { PROMPTS, availablePrompts, getPromptMessages, filterPromptsForStandardMode } from './prompt-registry.js';
+export { PROMPTS, availablePrompts, getPromptMessages } from './prompt-registry.js';

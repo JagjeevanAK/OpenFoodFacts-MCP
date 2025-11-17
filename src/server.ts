@@ -3,20 +3,16 @@ import { ListResourcesRequestSchema, ReadResourceRequestSchema, ListPromptsReque
 import express from 'express';
 import { setupStdioTransport, setupHttpTransport, logger } from './transport/transports.js';
 import { serverConfig } from './config/server-config.js';
-import { availableResources, routeResourceRequest, filterResourcesForStandardMode } from './resources/resource-registry.js';
+import { availableResources, routeResourceRequest } from './resources/resource-registry.js';
 import { registerTools } from './tools/index.js';
-import { registerCodebaseNavigatorTools } from './tools/register-codebase-navigator.js';
-import { registerContributorTools } from './tools/register-contributor-tools.js';
-import { availablePrompts, getPromptMessages, filterPromptsForStandardMode } from './prompts/index.js';
+import { availablePrompts, getPromptMessages } from './prompts/index.js';
 import { setupRoots } from './roots/index.js';
 
 /**
- * Start the MCP server with configured transports
+ * Start the MCP server with configured transports for food-aware consumers
  * The server can use either stdio (for VS Code extension) or HTTP (for browser clients)
- * 
- * @param developerMode Whether to enable developer tools and resources
  */
-export async function startServer(developerMode = false) {
+export async function startServer() {
   // Initialize the MCP server with our config using McpServer
   const server = new McpServer(serverConfig, {
     capabilities: {
@@ -31,47 +27,26 @@ export async function startServer(developerMode = false) {
   // Setup roots handling
   setupRoots(server);
 
-  // Register core MCP tools (always enabled)
-  registerTools(server, developerMode);
-  
-  // Conditionally register developer tools
-  if (developerMode) {
-    // Register Codebase Navigator tools for open source contributors
-    registerCodebaseNavigatorTools(server);
-    
-    // Register custom contributor tools
-    registerContributorTools(server);
-    
-    logger.info('Developer mode enabled: Contributor tools registered');
-  }
+  // Register food-related MCP tools
+  registerTools(server);
 
   // Set up resource listing handler
   server.server.setRequestHandler(ListResourcesRequestSchema, async () => {
-    // If not in developer mode, filter out developer-only resources
-    const resources = developerMode ? 
-      availableResources : 
-      filterResourcesForStandardMode(availableResources);
-      
     return {
-      resources: resources
+      resources: availableResources
     };
   });
 
   // Set up resource reading handler
   server.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const uri = request.params.uri;
-    return await routeResourceRequest(uri, developerMode);
+    return await routeResourceRequest(uri);
   });
 
   // Set up prompts listing handler
   server.server.setRequestHandler(ListPromptsRequestSchema, async () => {
-    // If not in developer mode, filter out developer-only prompts
-    const prompts = developerMode ? 
-      availablePrompts : 
-      filterPromptsForStandardMode(availablePrompts);
-      
     return {
-      prompts: prompts
+      prompts: availablePrompts
     };
   });
 

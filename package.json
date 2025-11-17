@@ -1,7 +1,7 @@
 {
   "name": "@jagjeevan/openfoodfacts-mcp",
   "version": "1.0.3",
-  "description": "Model Context Protocol server for Open Food Facts",
+  "description": "Model Context Protocol server for Open Food Facts - Enables AI assistants to access food product information, nutritional analysis, and recipe suggestions",
   "main": "dist/index.js",
   "type": "module",
   "bin": {

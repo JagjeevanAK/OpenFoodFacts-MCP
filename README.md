@@ -1,74 +1,37 @@
 # Open Food Facts MCP Server
 
-This is a Model Context Protocol (MCP) server implementation for the Open Food Facts project. It provides contextual information about food products to AI-powered development tools using the official [Model Context Protocol](https://modelcontextprotocol.io/) specification.
+This is a Model Context Protocol (MCP) server implementation for Open Food Facts. It enables AI assistants to access food product information, providing nutritional analysis, product comparisons, and recipe suggestions using the official [Model Context Protocol](https://modelcontextprotocol.io/) specification.
 
 ## Overview
 
 ### What is the Model Context Protocol?
 
-The Model Context Protocol (MCP) is a standardized way for AI-powered development tools to communicate with code repositories and other data sources. It allows AI tools to understand codebases better by providing structured access to:
+The Model Context Protocol (MCP) is a standardized way for AI assistants to communicate with external data sources. This server connects AI tools to the Open Food Facts database, allowing them to:
 
-- File content and project structure
-- Code relationships and architectural insights
-- Domain-specific knowledge and documentation
-- Interactive tools for code exploration
+- Search for food products
+- Access detailed nutritional information
+- Analyze product health scores
+- Compare products
+- Suggest recipes
 
-### How it Benefits Open Food Facts
+### Benefits for Food-Aware Consumers
 
 This MCP server enables:
 
-1. **Enhanced AI Assistance**: LLMs can provide more accurate information about food products
-2. **Developer Productivity**: Automated assistance for common Open Food Facts development tasks
-3. **Knowledge Sharing**: Better understanding of the codebase for contributors
-4. **User Support**: Improved answers to nutrition and product-related questions
-
-## Server Modes
-
-The MCP server supports two operational modes:
-
-### Standard Mode
-
-The default mode focused on food product information for general users:
-
-- Access to food product tools only
-- Limited resources focused on product information
-- Simplified interface for non-developer users
-- Optimized for nutritional analysis and food product questions
-
-### Developer Mode
-
-An enhanced mode with additional tools for Open Food Facts contributors:
-
-- All standard food product tools
-- GitHub repository analysis tools
-- Codebase navigation and analysis tools
-- Development-specific resources and prompts
-- Technical documentation and guides
+1. **Nutritional Intelligence**: Get AI-powered analysis of food products and their health implications
+2. **Informed Choices**: Compare products to make better dietary decisions
+3. **Recipe Ideas**: Discover recipes based on products you have
+4. **Dietary Support**: Understand allergens, additives, and dietary compatibility
 
 ## Available Tools
 
-### Food Product Tools (Available in Both Modes)
+### Food Product Tools
 
 - **searchProducts**: Search for products in the Open Food Facts database by name, brand, category, or other keywords
 - **getProductByBarcode**: Get detailed information about a product by its barcode (EAN, UPC, etc.)
-- **analyzeProduct**: Analyze a product from the Open Food Facts database using AI
-- **compareProducts**: Compare two products from the Open Food Facts database using AI
-- **suggestRecipes**: Get AI-powered recipe suggestions using a product from the Open Food Facts database
-
-### GitHub Repository Tools (Developer Mode Only)
-
-- **analyzeGitHubIssue**: Analyze a specific GitHub issue from Open Food Facts repositories using AI
-- **analyzeGitHubIssuesByLabel**: Analyze multiple GitHub issues with a specific label from Open Food Facts repositories
-- **createGitHubIssueRoadmap**: Generate a prioritized roadmap based on open GitHub issues from Open Food Facts repositories
-
-### Developer Tools (Developer Mode Only)
-
-- **analyzeRepository**: Analyze the structure and organization of Open Food Facts repositories
-- **explainCode**: Get detailed explanations of code segments in the Open Food Facts codebase
-- **matchIssues**: Find related issues and pull requests for a specific problem
-- **generatePR**: Generate a pull request template for a code change
-- **generateTests**: Create test cases for a function or module
-- **gitHelper**: Get assistance with git commands for Open Food Facts development
+- **analyzeProduct**: Get AI-powered nutritional analysis of a food product
+- **compareProducts**: Compare two products with AI-powered insights
+- **suggestRecipes**: Get AI-powered recipe suggestions using a product
 
 ## Getting Started
 
@@ -76,15 +39,10 @@ An enhanced mode with additional tools for Open Food Facts contributors:
 
 - Node.js (v16.x or higher)
 - npm or yarn
-- Access to the Open Food Facts API (no authentication required)
 
 ### Installation
 
-1. Clone the repository or navigate to the MCP server directory:
-
-```bash
-cd mcp-server
-```
+1. Clone or download this repository
 
 2. Install dependencies:
 
@@ -100,368 +58,249 @@ npm run build
 
 4. Start the server:
 
-**Standard Mode (default):**
 ```bash
 npm start
-# or
-node dist/cli.js
 ```
 
-**Developer Mode:**
-```bash
-npm start -- --developer
-# or
-node dist/cli.js --developer
-```
-
-## VS Code Integration
-
-### Setting Up MCP in VS Code
-
-1. Install the "Model Context Protocol" extension for VS Code
-
-2. Create or update `.vscode/mcp.json` with the appropriate configuration:
-
-**For Standard Users:**
-
-```json
-{
-    "servers": {
-        "openfoodfacts-standard": {
-            "command": "node",
-            "args": [
-                "${workspaceFolder}/mcp-server/dist/cli.js"
-            ],
-            "env": {
-                "TRANSPORT": "stdio"
-            },
-            "description": "Standard mode with food product tools only"
-        }
-    },
-    "defaultServer": "openfoodfacts-standard"
-}
-```
-
-**For Developers:**
-
-```json
-{
-    "servers": {
-        "openfoodfacts-developer": {
-            "command": "node",
-            "args": [
-                "${workspaceFolder}/mcp-server/dist/cli.js",
-                "--developer"
-            ],
-            "env": {
-                "TRANSPORT": "stdio"
-            },
-            "description": "Developer mode with all tools including GitHub and code analysis"
-        }
-    },
-    "defaultServer": "openfoodfacts-developer"
-}
-```
-
-3. Use the "MCP: Connect to Server" command in VS Code and select your preferred server mode
-
-## Example Tool Prompts
-
-Below are example prompts you can use with any AI assistant to trigger specific MCP tools. These show natural ways to phrase requests to access each tool's functionality.
-
-### Standard Mode Tool Examples
-
-#### searchProducts
-- "Search for chocolate cereals in the Open Food Facts database"
-- "Find products that contain almond milk"
-- "Look for organic yogurt products in Open Food Facts"
-
-#### getProductByBarcode
-- "Get information about the product with barcode 3017620422003"
-- "What's in the product with EAN 5000159407236?"
-- "Show nutritional data for barcode 8076809513326"
-
-#### analyzeProduct
-- "Can you analyze Nutella nutritionally?"
-- "Analyze Cheerios cereal and tell me if it's healthy"
-- "Give me an analysis of the ingredients in Oreo cookies"
-
-#### compareProducts
-- "Compare Nutella and Nocciolata"
-- "Which is healthier: Coke or Pepsi?"
-- "Compare almond milk and soy milk nutritionally"
-
-#### suggestRecipes
-- "What can I make with Greek yogurt?"
-- "Suggest some recipes using chickpeas"
-- "Give me recipe ideas for quinoa"
-
-### Developer Mode Tool Examples
-
-#### analyzeGitHubIssue
-- "Analyze GitHub issue #1234 in the openfoodfacts-server repository"
-- "What's the status of issue #876 in openfoodfacts-server?"
-- "Give me a summary of GitHub issue #2468"
-
-#### analyzeGitHubIssuesByLabel
-- "Analyze issues with the 'bug' label in the openfoodfacts-server repository"
-- "What are the common themes in issues labeled 'enhancement'?"
-- "Summarize all issues with the 'documentation' label"
-
-#### createGitHubIssueRoadmap
-- "Create a roadmap for the openfoodfacts-server repository"
-- "Generate a short-term roadmap for the mobile app improvements"
-- "What should be prioritized for the product search functionality?"
-
-#### analyzeRepository
-- "Analyze the structure of the Open Food Facts repository"
-- "Give me an overview of the codebase architecture"
-- "What's the overall design of the Open Food Facts codebase?"
-
-#### explainCode
-- "Explain how the product search functionality works"
-- "How does the taxonomy system work in Open Food Facts?"
-- "Explain the code for handling product images"
-
-#### matchIssues
-- "Find GitHub issues related to product image processing"
-- "Are there any issues about barcode scanning problems?"
-- "Match issues about the product search functionality"
-
-#### generatePR
-- "Generate a PR template for fixing the product search endpoint"
-- "I need a pull request for adding a new field to the product schema"
-- "Create a PR for improving error handling"
-
-#### generateTests
-- "Generate tests for the product search functionality"
-- "Create unit tests for the barcode validation function"
-- "I need test cases for the user authentication flow"
-
-#### gitHelper
-- "How do I create a new branch for a feature in Open Food Facts?"
-- "What's the proper git workflow for contributing to this project?"
-- "What git commands should I use to update my fork?"
-
-## LLM Connection Methods
-
-You can connect various AI assistants to your Open Food Facts MCP server:
-
-### VS Code Extension with GitHub Copilot
-
-1. Install the MCP extension for VS Code
-2. Configure in `.vscode/mcp.json` as shown above
-3. Connect via the VS Code MCP extension UI
+## Using with AI Assistants
 
 ### Claude Desktop
 
-1. Start your MCP server using HTTP/SSE transport mode:
+1. Start the MCP server:
 ```bash
-PORT=28375 npm start
-# For developer mode:
-PORT=28375 npm start -- --developer
+npm start
 ```
 
-2. In Claude Desktop, connect to the MCP server at `http://localhost:28375/sse`
+2. Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
-### Other AI Tools (Cursor AI, WindsurfAI, etc.)
+```json
+{
+  "mcpServers": {
+    "openfoodfacts": {
+      "command": "node",
+      "args": ["/path/to/OpenFoodFacts-MCP/dist/index.js"],
+      "env": {
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
 
-1. Start your MCP server in your preferred mode
-2. Configure the AI tool to connect to your local MCP server
-3. Use the example prompts above to access specific tools
+### VS Code with GitHub Copilot
+
+1. Install the "Model Context Protocol" extension for VS Code
+
+2. Create `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "openfoodfacts": {
+      "command": "node",
+      "args": ["${workspaceFolder}/dist/cli.js"],
+      "env": {
+        "TRANSPORT": "stdio"
+      }
+    }
+  }
+}
+```
+
+### Other AI Tools
+
+The server supports HTTP/SSE transport for browser-based AI tools:
+
+```bash
+TRANSPORT=http PORT=3000 npm start
+```
+
+Then connect your AI tool to `http://localhost:3000/sse`
+
+## Example Conversations
+
+Here are natural ways to ask your AI assistant to use the Open Food Facts tools:
+
+### Searching for Products
+
+- "Search for chocolate cereals in the Open Food Facts database"
+- "Find products that contain almond milk"
+- "Look for organic yogurt products"
+
+### Getting Product Details
+
+- "Get information about the product with barcode 3017620422003"
+- "What's in the product with EAN 5000159407236?"
+- "Show me nutritional data for barcode 8076809513326"
+
+### Analyzing Products
+
+- "Can you analyze Nutella nutritionally?"
+- "Analyze Cheerios cereal and tell me if it's healthy"
+- "Give me a health analysis of Oreo cookies"
+- "Is the product with barcode 3017620422003 healthy?"
+
+### Comparing Products
+
+- "Compare Nutella and Nocciolata"
+- "Which is healthier: Coke or Pepsi?"
+- "Compare almond milk and soy milk nutritionally"
+- "Compare the products with barcodes 3017620422003 and 5000159407236"
+
+### Recipe Suggestions
+
+- "What can I make with Greek yogurt?"
+- "Suggest some recipes using chickpeas"
+- "Give me recipe ideas for quinoa"
+- "What recipes can I make with the product 3017620422003?"
 
 ## Resources and Prompts
 
-The MCP server provides different sets of resources and prompts based on the active mode:
+The MCP server provides helpful resources and prompts:
 
-### Standard Mode Resources
+### Resources
 
-- Product information
-- Database schema
-- API documentation
-- Food categories taxonomy
-
-### Developer Mode Additional Resources
-
-- Project structure navigation
-- Code patterns and conventions
-- File organization guides
-- Development templates
+- **Project Information**: Overview of Open Food Facts
+- **Database Schema**: Understanding the data structure
+- **API Documentation**: How the Open Food Facts API works
+- **Food Categories**: Taxonomy of food categories
 
 ### Prompts
 
-The server offers pre-configured prompts for common tasks:
+Pre-configured prompts help you get started:
 
-**Standard Mode:**
-- Analyze a food product
-- Compare products
-- Check for additives
+- **analyze-product**: Get detailed nutritional analysis
+- **compare-products**: Compare two products side-by-side
+- **check-additives**: Check for questionable additives
+- **api-usage-example**: Learn how to use the Open Food Facts API
 
-**Developer Mode (Additional):**
-- Debug Perl code
-- Explain codebase structure
-- Implement features
-- Optimize MongoDB queries
-- Create unit tests
-- Review pull requests
-- And many more development-focused prompts
+## How It Works
 
-## Using MCP Tools Effectively
+The MCP server acts as a bridge between AI assistants and the Open Food Facts database:
 
-For maximum effectiveness when using the MCP tools:
+1. **Your Question**: You ask your AI assistant about food products
+2. **Tool Detection**: The AI recognizes it needs Open Food Facts data
+3. **MCP Request**: The AI calls the appropriate MCP tool
+4. **Data Retrieval**: The server fetches data from Open Food Facts
+5. **AI Analysis**: The AI processes the data and responds to you
 
-### Product Information (Standard Mode)
+## Example Workflows
 
-1. **Finding Products**:
-   - Use `searchProducts` to find products by name, brand, or category
-   - Use `getProductByBarcode` when you have a specific product barcode
+### Making Healthier Choices
 
-2. **Analysis and Comparison**:
-   - Use `analyzeProduct` for nutritional insights and health analysis
-   - Use `compareProducts` to directly compare two products
-   - Use `suggestRecipes` to get cooking ideas based on ingredients
+```
+You: "Is Nutella healthy?"
 
-### Development Tasks (Developer Mode)
+AI Assistant uses:
+1. searchProducts to find Nutella
+2. getProductByBarcode with the barcode
+3. analyzeProduct for nutritional assessment
 
-1. **Understanding the Codebase**:
-   - Use `analyzeRepository` to grasp the overall structure
-   - Use `explainCode` for detailed code explanations
-   
-2. **Issue Management**:
-   - Use `analyzeGitHubIssue` for understanding specific issues
-   - Use `analyzeGitHubIssuesByLabel` for identifying patterns across issues
-   - Use `matchIssues` to find related issues for a problem
-   
-3. **Contributing Code**:
-   - Use `generatePR` to create PR templates
-   - Use `generateTests` to add test coverage
-   - Use `gitHelper` for git workflow guidance
+Response: Detailed analysis of Nutella's nutritional profile,
+health scores, ingredients, and dietary considerations
+```
 
-## Example User Workflows
+### Comparing Options
 
-### Standard Mode Workflow Examples
+```
+You: "Which is better for me, Nutella or almond butter?"
 
-1. **Nutritional Analysis**:
-   ```
-   User: "Is Nutella healthy?"
-   MCP Flow:
-   1. searchProducts to find Nutella
-   2. getProductByBarcode with the found barcode
-   3. analyzeProduct for nutritional assessment
-   ```
+AI Assistant uses:
+1. searchProducts for both products
+2. compareProducts with both barcodes
 
-2. **Product Comparison**:
-   ```
-   User: "Which is healthier, Nutella or Nocciolata?"
-   MCP Flow:
-   1. searchProducts for each product
-   2. compareProducts using found barcodes
-   3. Structured comparison of nutritional values
-   ```
+Response: Side-by-side comparison with recommendations
+based on your dietary needs
+```
 
-3. **Recipe Ideas**:
-   ```
-   User: "What can I make with Greek yogurt?"
-   MCP Flow:
-   1. searchProducts to find Greek yogurt
-   2. suggestRecipes with the product
-   ```
+### Recipe Planning
 
-### Developer Mode Workflow Examples
+```
+You: "What can I make with Greek yogurt?"
 
-1. **Understanding the Codebase**:
-   ```
-   User: "How is the product schema organized?"
-   MCP Flow:
-   1. explainCode with focus on schema
-   2. analyzeRepository for related components
-   ```
+AI Assistant uses:
+1. searchProducts to find Greek yogurt
+2. suggestRecipes with the product
 
-2. **Fixing Issues**:
-   ```
-   User: "Help me debug this Perl error with product validation"
-   MCP Flow:
-   1. matchIssues to find similar problems
-   2. explainCode to understand the validation logic
-   ```
+Response: Recipe suggestions that use Greek yogurt
+as an ingredient
+```
 
-3. **Contributing**:
-   ```
-   User: "I want to add a new field to the product schema"
-   MCP Flow:
-   1. explainCode to examine schema structure
-   2. generatePR to create a PR template
-   3. generateTests for the new field
-   ```
-
-## Implementation Details
+## Technical Details
 
 ### Server Architecture
 
-The MCP server is structured as follows:
+- `src/server.ts`: Core MCP server implementation
+- `src/tools/`: Food product tools
+  - `product-search.ts`: Search and barcode lookup
+  - `ai-analysis-tool.ts`: AI-powered analysis
+- `src/resources/`: Resource handlers
+- `src/prompts/`: Pre-configured prompts
+- `src/sampling/`: AI model integration
+- `src/transport/`: Communication layer (stdio, HTTP)
 
-- `src/cli.ts`: Command-line interface with developer mode flag parsing
-- `src/server.ts`: Core server implementation with mode-specific configuration
-- `src/tools/`: Contains all tool implementations
-  - `src/tools/index.ts`: Central registry that conditionally registers tools based on mode
-  - `src/tools/product-search.ts`: Product search and barcode lookup tools
-  - `src/tools/ai-analysis-tool.ts`: AI-powered product analysis tools
-  - `src/tools/github-issues-tool.ts`: GitHub issue analysis tools (developer mode)
-- `src/resources/`: Resource handlers and registry with mode filtering
-- `src/prompts/`: Prompt definitions and handlers with mode filtering
-- `src/sampling/`: Services for interacting with AI models
-- `src/transport/`: Transport layer implementations (stdio, HTTP/SSE)
+### Data Source
 
-### Command-Line Arguments
+All product data comes from [Open Food Facts](https://world.openfoodfacts.org/), a free, open, collaborative database of food products from around the world.
 
-The server supports the following command-line arguments:
+## Troubleshooting
 
-- `--developer`: Enable developer mode with additional tools and resources
-- `--transport=<type>`: Set the transport type (stdio, http)
-- `--port=<number>`: Set the HTTP port for HTTP/SSE transport
-- `--help`: Show help information
+### Server Won't Start
 
-## Debugging and Troubleshooting
+- Ensure Node.js v16+ is installed
+- Run `npm install` to install dependencies
+- Check that port 3000 is available (for HTTP mode)
 
-### Common Issues
+### AI Can't Find Tools
 
-1. **Connection Problems**:
-   - Check that the server is running with the correct transport mode
-   - Verify port availability when using HTTP/SSE transport
-   - Ensure VS Code extension is properly configured
+- Verify the MCP server is running
+- Check your AI assistant's MCP configuration
+- Ensure the transport type matches (stdio vs HTTP)
 
-2. **Missing Tools in Standard Mode**:
-   - Developer tools require `--developer` flag
-   - Check if you started the server in standard mode
+### Product Not Found
 
-3. **GitHub API Rate Limits**:
-   - The server uses unauthenticated GitHub API calls which have rate limits
-   - Consider connecting to GitHub with authentication for higher limits
+- Try searching first with `searchProducts`
+- Verify the barcode is correct (8-14 digits)
+- Some products may not be in the database yet
 
-### Logs
+### Slow Responses
 
-The server outputs logs to help diagnose issues:
-
-- Standard log output shows connection information and errors
-- Server mode and enabled capabilities are displayed at startup
-- Tool invocation and error details are logged
+- The server fetches real-time data from Open Food Facts
+- First requests may be slower as data is retrieved
+- Internet connection speed affects performance
 
 ## Contributing
 
-Contributions are welcome! Here are some ways you can improve the MCP server:
+We welcome contributions! You can help by:
 
-1. Add more specialized tools for Open Food Facts-specific functionality
-2. Enhance the existing tools with more detailed information
-3. Improve error handling and validation
-4. Add support for more data sources
+- Adding support for more food databases
+- Improving AI analysis prompts
+- Enhancing error handling
+- Adding new tools for dietary tracking
+- Improving documentation
 
-### Development Workflow
+## About Open Food Facts
 
-1. Make changes in the `src/` directory
-2. Build with `npm run build`
-3. Test both modes: standard and developer
-4. Submit a PR with clear documentation of your changes
+Open Food Facts is a food products database made by everyone, for everyone. It's a collaborative project that collects information about food products from around the world, including:
+
+- Ingredients
+- Nutritional facts
+- Allergens
+- Environmental impact
+- Health scores (Nutri-Score, NOVA)
+
+Learn more at [https://world.openfoodfacts.org/](https://world.openfoodfacts.org/)
 
 ## License
 
-This project is licensed under the GNU Affero General Public License, the same license as the Open Food Facts project.
+This project is licensed under the GNU Affero General Public License v3.0, consistent with the Open Food Facts project.
+
+## Support
+
+- Open Food Facts Website: https://world.openfoodfacts.org/
+- Open Food Facts GitHub: https://github.com/openfoodfacts
+- Model Context Protocol: https://modelcontextprotocol.io/
+
+---
+
+**Made with ❤️ for food-aware consumers everywhere**

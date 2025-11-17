@@ -4,6 +4,17 @@
  * @returns Response with appropriate static content
  */
 export function handleStaticResource(uri: string) {
+  // Project info resource
+  if (uri === "openfoodfacts://info") {
+    return {
+      contents: [{
+        uri,
+        text: getProjectInfoText(),
+        mimeType: "application/json"
+      }]
+    };
+  }
+  
   // Database schema resource
   if (uri === "openfoodfacts://schema") {
     return {
@@ -24,26 +35,6 @@ export function handleStaticResource(uri: string) {
     };
   }
   
-  // Code patterns resource
-  if (uri === "openfoodfacts://code-patterns") {
-    return {
-      contents: [{
-        uri,
-        text: getCodePatternsText()
-      }]
-    };
-  }
-  
-  // File organization resource
-  if (uri === "openfoodfacts://file-organization") {
-    return {
-      contents: [{
-        uri,
-        text: getFileOrganizationText()
-      }]
-    };
-  }
-  
   // Categories taxonomy resource - static implementation
   if (uri === "openfoodfacts://taxonomy/categories") {
     return {
@@ -59,6 +50,31 @@ export function handleStaticResource(uri: string) {
   }
   
   throw new Error(`Static resource not found: ${uri}`);
+}
+
+function getProjectInfoText(): string {
+  return JSON.stringify({
+    name: "Open Food Facts",
+    description: "Open Food Facts is a food products database made by everyone, for everyone. You can use it to make better food choices.",
+    website: "https://world.openfoodfacts.org",
+    api: {
+      base_url: "https://world.openfoodfacts.org/api/v3",
+      documentation: "https://openfoodfacts.github.io/openfoodfacts-server/api/"
+    },
+    database: {
+      products: "Over 2 million food products",
+      contributors: "Tens of thousands of contributors worldwide",
+      countries: "Available in 190+ countries"
+    },
+    features: [
+      "Product search and barcode scanning",
+      "Nutrition facts and Nutri-Score",
+      "Ingredient analysis",
+      "Allergen detection",
+      "NOVA food processing classification",
+      "Eco-Score environmental impact"
+    ]
+  }, null, 2);
 }
 
 /**
@@ -103,9 +119,6 @@ The system uses MongoDB for the main database, and files are stored in the files
   `;
 }
 
-/**
- * Get the API documentation text
- */
 function getApiDocumentationText(): string {
   return `
 # Open Food Facts API Documentation
@@ -148,93 +161,6 @@ Products are returned in JSON format with various fields depending on the produc
   `;
 }
 
-/**
- * Get the code patterns text
- */
-function getCodePatternsText(): string {
-  return `
-# Open Food Facts Code Patterns
-
-## Backend Perl Modules
-
-1. ProductOpener::* - Core modules for the product database
-   - ProductOpener::Product - Product data handling
-   - ProductOpener::Import - Import functionality
-   - ProductOpener::Display - HTML display functions
-   - ProductOpener::Tags - Taxonomy related functions
-
-2. CGI Scripts
-   - Most functionality is exposed through CGI scripts in the /cgi directory
-   - Scripts like product.pl, search.pl handle different web endpoints
-
-3. Frontend Structure
-   - JavaScript files in /html/js
-   - SCSS stylesheets compiled to CSS
-   - Foundation framework for UI components
-   - Templates in /templates directory
-
-4. Docker Architecture
-   - Multi-container setup with docker-compose
-   - Separate containers for frontend, backend, MongoDB, etc.
-
-5. Common Code Patterns
-   - Perl modules use object-oriented style with hashes
-   - JavaScript follows component-based patterns
-   - Internationalization through .po files
-   - Taxonomies are central to data organization
-  `;
-}
-
-/**
- * Get the file organization text
- */
-function getFileOrganizationText(): string {
-  return `
-# Open Food Facts File Organization
-
-## Core Application Code
-- /lib/ProductOpener/*.pm: Perl modules for core business logic
-- /cgi/*.pl: CGI script endpoints for web requests
-- /html/js/*.js: Frontend JavaScript
-- /scss/*.scss: Source SCSS stylesheets
-
-## Templates and UI
-- /templates/*.tt: HTML template files
-- /html/css/: Compiled CSS stylesheets
-- /icons/: Icon files for the UI
-
-## Data Definitions
-- /taxonomies/: Hierarchical data classifications
-- /ingredients/: Ingredients database
-- /emb_codes/: Packaging codes database
-- /packager-codes/: Packager identification codes
-
-## Internationalization
-- /po/: Translation files
-- /lang/: Language-specific resources
-
-## Configuration
-- /conf/: Configuration files
-- /docker/: Docker configuration files
-
-## Deployment
-- Dockerfile: Container definition
-- docker-compose.yml: Multi-container configuration
-- /scripts/: Utility scripts for deployment and maintenance
-
-## Documentation
-- /docs/: Project documentation
-- README.md: Project overview
-
-## Tests
-- /t/: Test files
-- /tests/: Additional test files
-  `;
-}
-
-/**
- * Get the categories taxonomy text
- */
 function getCategoriesTaxonomyText(): string {
   return `
 # Taxonomy: categories

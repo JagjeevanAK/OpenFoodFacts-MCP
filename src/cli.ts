@@ -31,19 +31,14 @@ if (options.transport) {
   logger.info(`Transport mode: ${options.transport}`);
 }
 
-logger.info(`Mode: ${developerMode ? 'Developer (all tools enabled)' : 'Standard (core tools only)'}`);
-
 logger.info('Enabled capabilities:');
 logger.info('- Resources: Food product data access');
 logger.info('- Tools: Food product search and information');
 logger.info('- Prompts: Food product analysis templates');
 logger.info('- Sampling: AI-powered food product analysis');
 logger.info('- Roots: Resource boundary management');
-if (developerMode) {
-  logger.info('- Developer Tools: Code analysis, PR generation, and contributor assistance');
-}
 
-startServer(developerMode).catch((error: Error) => {
+startServer().catch((error: Error) => {
   logger.error('Failed to start MCP server:', error);
   process.exit(1);
 });
