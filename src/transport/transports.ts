@@ -1,7 +1,7 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { PORT } from "../config/server-config.js";
 import fs from 'fs';
 import path from 'path';
@@ -15,7 +15,6 @@ export const logger = {
     try {
       fs.appendFileSync(this._logFile, `${new Date().toISOString()} - ${message}\n`);
     } catch (err) {
-      // Fallback to stderr if file writing fails
       process.stderr.write(`${message}\n`);
     }
   },
@@ -76,39 +75,42 @@ export function setupStdioTransport(server: McpServer): Promise<void> {
 }
 
 /**
- * Setup HTTP/SSE transport for web-based clients
+ * Setup HTTP transport using StreamableHTTP for web-based clients
  * @param server MCP server instance
  * @param app Express application
  */
 export function setupHttpTransport(server: McpServer, app: express.Application): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      let transport: SSEServerTransport | null = null;
+      app.use(express.json());
 
-      app.get("/sse", (req, res) => {
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Connection", "keep-alive");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        
-        transport = new SSEServerTransport("/messages", res);
-        
-        res.on("close", () => {
-          logger.info("SSE connection closed");
-          transport = null;
-        });
-        
-        server.connect(transport).catch(error => {
-          logger.error("Error connecting SSE transport:", error);
-          reject(error);
-        });
-      });
+      // StreamableHTTP endpoint (modern MCP transport)
+      app.post("/mcp", async (req, res) => {
+        try {
+          // Create a new transport for each request to prevent request ID collisions
+          const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+            enableJsonResponse: true
+          });
 
-      app.post("/messages", express.json(), (req, res) => {
-        if (transport) {
-          transport.handlePostMessage(req, res);
-        } else {
-          res.status(400).send('No active SSE connection found');
+          res.on('close', () => {
+            transport.close();
+          });
+
+          await server.connect(transport);
+          await transport.handleRequest(req, res, req.body);
+        } catch (error) {
+          logger.error('Error handling MCP request:', error);
+          if (!res.headersSent) {
+            res.status(500).json({
+              jsonrpc: '2.0',
+              error: {
+                code: -32603,
+                message: 'Internal server error'
+              },
+              id: null
+            });
+          }
         }
       });
 
@@ -122,8 +124,7 @@ export function setupHttpTransport(server: McpServer, app: express.Application):
 
       app.listen(PORT, () => {
         logger.info(`Open Food Facts MCP Server running on HTTP port ${PORT}`);
-        logger.info(`Use SSE endpoint at http://localhost:${PORT}/sse`);
-        logger.info(`Client-to-server messages should be POSTed to http://localhost:${PORT}/messages`);
+        logger.info(`Use StreamableHTTP endpoint at http://localhost:${PORT}/mcp`);
         resolve();
       });
     } catch (error) {

@@ -1,7 +1,8 @@
-export { 
+export {
   requestSampling,
   createProductAnalysisRequest,
-  createProductComparisonRequest, 
+  createProductComparisonRequest,
   createRecipeSuggestionRequest,
+  getResponseText,
   SamplingRequest
 } from './sampling-service.js';

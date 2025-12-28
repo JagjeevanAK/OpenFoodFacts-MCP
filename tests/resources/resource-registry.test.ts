@@ -1,24 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { routeResourceRequest, availableResources } from '../../src/resources/resource-registry';
-import { handleProjectStructure } from '../../src/resources/project-structure';
-import { handleFileContent } from '../../src/resources/file-content';
-import { handleProjectInfo } from '../../src/resources/project-info';
 import { handleTaxonomy } from '../../src/resources/taxonomy';
 import { handleStaticResource } from '../../src/resources/static-resources';
 
-// Mock all resource handlers
-vi.mock('../../src/resources/project-structure', () => ({
-    handleProjectStructure: vi.fn()
-}));
-
-vi.mock('../../src/resources/file-content', () => ({
-    handleFileContent: vi.fn()
-}));
-
-vi.mock('../../src/resources/project-info', () => ({
-    handleProjectInfo: vi.fn()
-}));
-
+// Mock resource handlers
 vi.mock('../../src/resources/taxonomy', () => ({
     handleTaxonomy: vi.fn()
 }));
@@ -33,15 +18,13 @@ describe('Resource Registry', () => {
     });
 
     describe('availableResources', () => {
-        it('should define all required resources', () => {
+        it('should define all required consumer resources', () => {
             expect(availableResources).toBeInstanceOf(Array);
             const resourceUris = availableResources.map(r => r.uri);
-            expect(resourceUris).toContain('openfoodfacts://structure/');
+
+            // Consumer-focused resources
             expect(resourceUris).toContain('openfoodfacts://info');
             expect(resourceUris).toContain('openfoodfacts://schema');
-            expect(resourceUris).toContain('openfoodfacts://api-docs');
-            expect(resourceUris).toContain('openfoodfacts://code-patterns');
-            expect(resourceUris).toContain('openfoodfacts://file-organization');
             expect(resourceUris).toContain('openfoodfacts://taxonomy/categories');
 
             availableResources.forEach(resource => {
@@ -53,54 +36,45 @@ describe('Resource Registry', () => {
     });
 
     describe('routeResourceRequest', () => {
-        it('should route project structure resource requests correctly', async () => {
-            const uri = 'openfoodfacts://structure/path';
-            const mockResponse = { contents: [{ uri, text: 'structure content', isError: false }] };
-
-            vi.mocked(handleProjectStructure).mockResolvedValue(mockResponse);
-
-            const result = await routeResourceRequest(uri);
-
-            expect(handleProjectStructure).toHaveBeenCalledWith(uri, expect.any(URL));
-            expect(result).toBe(mockResponse);
-        });
-
-        it('should route file content resource requests correctly', async () => {
-            const uri = 'openfoodfacts://file/path/to/file.txt';
-            const mockResponse = { contents: [{ uri, text: 'file content', isError: false }] };
-
-            vi.mocked(handleFileContent).mockResolvedValue(mockResponse);
-
-            const result = await routeResourceRequest(uri);
-
-            expect(handleFileContent).toHaveBeenCalledWith(uri, expect.any(URL));
-            expect(result).toBe(mockResponse);
-        });
-
         it('should route project info resource requests correctly', async () => {
             const uri = 'openfoodfacts://info';
-            const mockResponse = { contents: [{ uri, text: 'project info', isError: false }] };
+            const mockResponse = { contents: [{ uri, text: 'project info' }] };
 
-            vi.mocked(handleProjectInfo).mockResolvedValue(mockResponse);
+            vi.mocked(handleStaticResource).mockReturnValue(mockResponse);
 
             const result = await routeResourceRequest(uri);
 
-            expect(handleProjectInfo).toHaveBeenCalledWith(uri);
+            expect(handleStaticResource).toHaveBeenCalledWith(uri);
             expect(result).toBe(mockResponse);
         });
 
-        it('should route taxonomy resource requests correctly', async () => {
+        it('should route schema resource requests correctly', async () => {
+            const uri = 'openfoodfacts://schema';
+            const mockResponse = { contents: [{ uri, text: 'schema content' }] };
+
+            vi.mocked(handleStaticResource).mockReturnValue(mockResponse);
+
+            const result = await routeResourceRequest(uri);
+
+            expect(handleStaticResource).toHaveBeenCalledWith(uri);
+            expect(result).toBe(mockResponse);
+        });
+
+        it('should route categories taxonomy as static resource', async () => {
             const uri = 'openfoodfacts://taxonomy/categories';
-            const mockResponse = {
-                contents: [{
-                    uri,
-                    text: 'taxonomy content',
-                    metadata: {
-                        taxonomyId: 'categories',
-                        filepath: 'taxonomy/categories.json'
-                    }
-                }]
-            };
+            const mockResponse = { contents: [{ uri, text: 'taxonomy content' }] };
+
+            vi.mocked(handleStaticResource).mockReturnValue(mockResponse);
+
+            const result = await routeResourceRequest(uri);
+
+            expect(handleStaticResource).toHaveBeenCalledWith(uri);
+            expect(result).toBe(mockResponse);
+        });
+
+        it('should route other taxonomy resource requests to taxonomy handler', async () => {
+            const uri = 'openfoodfacts://taxonomy/allergens';
+            const mockResponse = { contents: [{ uri, text: 'allergens taxonomy' }] };
 
             vi.mocked(handleTaxonomy).mockResolvedValue(mockResponse);
 
@@ -108,27 +82,6 @@ describe('Resource Registry', () => {
 
             expect(handleTaxonomy).toHaveBeenCalledWith(uri, expect.any(URL));
             expect(result).toBe(mockResponse);
-        });
-
-        it('should route static resource requests correctly', async () => {
-            const staticResources = [
-                'openfoodfacts://schema',
-                'openfoodfacts://api-docs',
-                'openfoodfacts://code-patterns',
-                'openfoodfacts://file-organization'
-            ];
-
-            for (const uri of staticResources) {
-                const mockResponse = { contents: [{ uri, text: 'static content', isError: false }] };
-                vi.mocked(handleStaticResource).mockReturnValue(mockResponse);
-
-                const result = await routeResourceRequest(uri);
-
-                expect(handleStaticResource).toHaveBeenCalledWith(uri);
-                expect(result).toBe(mockResponse);
-
-                vi.mocked(handleStaticResource).mockReset();
-            }
         });
 
         it('should handle errors for unknown resources', async () => {
@@ -140,23 +93,6 @@ describe('Resource Registry', () => {
                 contents: [{
                     uri,
                     text: 'Error processing request: Resource not found: openfoodfacts://unknown',
-                    isError: true
-                }]
-            });
-        });
-
-        it('should handle errors from resource handlers', async () => {
-            const uri = 'openfoodfacts://structure/path';
-            const error = new Error('Handler error');
-
-            vi.mocked(handleProjectStructure).mockRejectedValue(error);
-
-            const result = await routeResourceRequest(uri);
-
-            expect(result).toEqual({
-                contents: [{
-                    uri,
-                    text: 'Error processing request: Handler error',
                     isError: true
                 }]
             });

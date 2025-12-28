@@ -38,22 +38,6 @@ export const PROMPTS: Record<string, Prompt> = {
         required: true
       }
     ]
-  },
-  "api-usage-example": {
-    name: "api-usage-example",
-    description: "Get example code for using the Open Food Facts API",
-    arguments: [
-      {
-        name: "endpoint",
-        description: "The API endpoint you want to use (e.g., /product, /search)",
-        required: true
-      },
-      {
-        name: "language",
-        description: "Programming language for the example (e.g., JavaScript, Python)",
-        required: true
-      }
-    ]
   }
 };
 
@@ -61,12 +45,11 @@ export const availablePrompts = Object.values(PROMPTS);
 
 export async function getPromptMessages(promptName: string, args: Record<string, string> | undefined) {
   const prompt = PROMPTS[promptName];
-  
+
   if (!prompt) {
     throw new Error(`Prompt not found: ${promptName}`);
   }
 
-  // Validate required arguments
   const requiredArgs = prompt.arguments?.filter(arg => arg.required) || [];
   for (const arg of requiredArgs) {
     if (!args || !args[arg.name]) {
@@ -74,7 +57,6 @@ export async function getPromptMessages(promptName: string, args: Record<string,
     }
   }
 
-  // Generate prompt messages based on the prompt type
   const messages: Array<{ role: "user" | "assistant"; content: { type: "text"; text: string } }> = [];
 
   switch (promptName) {
@@ -108,15 +90,7 @@ export async function getPromptMessages(promptName: string, args: Record<string,
       });
       break;
 
-    case "api-usage-example":
-      messages.push({
-        role: "user",
-        content: {
-          type: "text",
-          text: `Please provide a code example for using the Open Food Facts API endpoint "${args?.endpoint}" in ${args?.language}. Include proper error handling, authentication if needed, and explain how to parse the response.`
-        }
-      });
-      break;
+
 
     default:
       throw new Error(`Unknown prompt: ${promptName}`);

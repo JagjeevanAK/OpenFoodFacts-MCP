@@ -14,7 +14,7 @@ export function handleStaticResource(uri: string) {
       }]
     };
   }
-  
+
   // Database schema resource
   if (uri === "openfoodfacts://schema") {
     return {
@@ -24,17 +24,8 @@ export function handleStaticResource(uri: string) {
       }]
     };
   }
-  
-  // API documentation resource
-  if (uri === "openfoodfacts://api-docs") {
-    return {
-      contents: [{
-        uri,
-        text: getApiDocumentationText()
-      }]
-    };
-  }
-  
+
+
   // Categories taxonomy resource - static implementation
   if (uri === "openfoodfacts://taxonomy/categories") {
     return {
@@ -48,7 +39,7 @@ export function handleStaticResource(uri: string) {
       }]
     };
   }
-  
+
   throw new Error(`Static resource not found: ${uri}`);
 }
 
@@ -119,47 +110,7 @@ The system uses MongoDB for the main database, and files are stored in the files
   `;
 }
 
-function getApiDocumentationText(): string {
-  return `
-# Open Food Facts API Documentation
 
-## Core API Endpoints
-
-1. Product Data:
-   - GET /api/v2/product/{barcode} - Get product by barcode
-   - GET /api/v2/search - Search products with parameters
-
-2. Taxonomies:
-   - GET /api/v2/taxonomies - List available taxonomies
-   - GET /api/v2/taxonomy/{taxonomy_id} - Get taxonomy details
-
-3. Product Images:
-   - GET /images/products/{barcode}/{image_id}.{ext} - Get product image
-
-4. Authentication:
-   - POST /cgi/session.pl - Create a new session
-
-## Data Formats
-
-Products are returned in JSON format with various fields depending on the product completeness.
-
-## Search Parameters
-
-- brands: Filter by brand
-- categories: Filter by category
-- labels: Filter by label
-- packaging: Filter by packaging
-- origins: Filter by origin
-- ingredients: Filter by ingredient
-- nutrition_grades: Filter by Nutri-Score
-
-## Additional Features
-
-- Folksonomy API for user-defined tags and properties
-- Export API for bulk data access
-- Image upload API for contributing photos
-  `;
-}
 
 function getCategoriesTaxonomyText(): string {
   return `

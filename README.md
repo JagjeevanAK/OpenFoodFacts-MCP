@@ -162,7 +162,6 @@ The MCP server provides helpful resources and prompts:
 
 - **Project Information**: Overview of Open Food Facts
 - **Database Schema**: Understanding the data structure
-- **API Documentation**: How the Open Food Facts API works
 - **Food Categories**: Taxonomy of food categories
 
 ### Prompts
@@ -172,7 +171,6 @@ Pre-configured prompts help you get started:
 - **analyze-product**: Get detailed nutritional analysis
 - **compare-products**: Compare two products side-by-side
 - **check-additives**: Check for questionable additives
-- **api-usage-example**: Learn how to use the Open Food Facts API
 
 ## How It Works
 
@@ -232,8 +230,8 @@ as an ingredient
 
 - `src/server.ts`: Core MCP server implementation
 - `src/tools/`: Food product tools
-  - `product-search.ts`: Search and barcode lookup
-  - `ai-analysis-tool.ts`: AI-powered analysis
+  - `index.ts`: All food tools (search, barcode lookup, AI analysis)
+  - `product-search.ts`: Product search utilities
 - `src/resources/`: Resource handlers
 - `src/prompts/`: Pre-configured prompts
 - `src/sampling/`: AI model integration

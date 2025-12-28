@@ -38,15 +38,15 @@ export interface SamplingRequest {
  */
 
 const CreateMessageResultSchema = z.object({
-    model: z.string(),
-    stopReason: z.string().optional(),
-    role: z.enum(["user", "assistant"]),
-    content: z.object({
-        type: z.enum(["text", "image"]),
-        text: z.string().optional(),
-        data: z.string().optional(),
-        mimeType: z.string().optional(),
-    }),
+  model: z.string(),
+  stopReason: z.string().optional(),
+  role: z.enum(["user", "assistant"]),
+  content: z.object({
+    type: z.enum(["text", "image"]),
+    text: z.string().optional(),
+    data: z.string().optional(),
+    mimeType: z.string().optional(),
+  }),
 });
 
 export async function requestSampling(
@@ -54,7 +54,6 @@ export async function requestSampling(
   request: SamplingRequest
 ): Promise<CreateMessageResult> {
   try {
-    // Access the underlying Server instance from McpServer
     const response = await mcpServer.server.request({
       method: "sampling/createMessage",
       params: {
@@ -68,12 +67,23 @@ export async function requestSampling(
         metadata: request.metadata
       }
     }, CreateMessageResultSchema);
-    
+
     return response as CreateMessageResult;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Sampling request failed: ${errorMessage}`);
   }
+}
+
+/**
+ * Extract text from a sampling response content
+ * Handles the union type (text | image | audio) safely
+ */
+export function getResponseText(response: CreateMessageResult): string {
+  if (response.content.type === 'text') {
+    return response.content.text;
+  }
+  return '';
 }
 
 /**
@@ -177,7 +187,7 @@ export function createRecipeSuggestionRequest(productData: any): SamplingRequest
         content: {
           type: "text",
           text: `Generate personalized recipe suggestions for ${productName} (${brands}) with varied cooking methods and health profiles. Consider its nutritional profile: Energy ${nutriments.energy_100g || "unknown"} kcal, Fat ${nutriments.fat_100g || "unknown"}g, Proteins ${nutriments.proteins_100g || "unknown"}g, Carbs ${nutriments.carbohydrates_100g || "unknown"}g.` +
-                `\n\nProduct information:\nCategory: ${category}\nIngredients: ${ingredients}\nPotential allergens: ${allergens}`
+            `\n\nProduct information:\nCategory: ${category}\nIngredients: ${ingredients}\nPotential allergens: ${allergens}`
         }
       }
     ],
@@ -215,60 +225,6 @@ export function createRecipeSuggestionRequest(productData: any): SamplingRequest
     Present your response in a clean, organized format with clear headings and sections.`,
     includeContext: "thisServer",
     temperature: 0.7,
-    maxTokens: 3500,
-    stopSequences: ["[END]"]
-  };
-}
-
-/**
- * Creates a completion request for generating a roadmap from GitHub issues
- * 
- * @param issues Array of simplified GitHub issues
- * @param repo Repository name
- * @param timeframe Timeframe for the roadmap (short, medium, or long)
- * @param focusArea Optional focus area to filter issues by
- * @returns Sampling request configuration
- */
-export function createGitHubRoadmapRequest(
-  issues: Array<{
-    number: number;
-    title: string;
-    labels: string[];
-    created_at: string;
-    updated_at: string;
-    comments: number;
-  }>, 
-  repo: string, 
-  timeframe: string,
-  focusArea?: string
-): SamplingRequest {
-  return {
-    messages: [
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text: `Generate a prioritized ${timeframe}-term roadmap based on these open GitHub issues from the Open Food Facts ${repo} repository${focusArea ? ` focusing on ${focusArea}` : ''}:\n\n${JSON.stringify(issues, null, 2)}`
-        }
-      }
-    ],
-    modelPreferences: {
-      hints: [
-        { name: "claude-3" },
-        { name: "gemini-2.0-flash" },
-        { name: "gemini-2.0" },
-        { name: "gemini-2.5-pro" },
-        { name: "sonnet" },
-        { name: "gpt-4.1" },
-        { name: "gpt-4o" }
-      ],
-      intelligencePriority: 0.9,
-      speedPriority: 0.3,
-      costPriority: 0.4
-    },
-    systemPrompt: `You are a product manager and technical lead for the Open Food Facts ${repo} repository. Create a prioritized ${timeframe}-term roadmap based on the provided GitHub issues. Include:\n\n1. EXECUTIVE SUMMARY: Brief overview of key priorities\n2. PRIORITY ISSUES: List of issues to address first with justification\n3. IMPLEMENTATION TIMELINE: Suggested schedule broken down by weeks/months\n4. RESOURCE REQUIREMENTS: Estimated developer hours and specialties needed\n5. DEPENDENCIES: How issues relate and depend on each other\n6. SUCCESS METRICS: How to measure successful implementation\n7. RISKS AND MITIGATIONS: Potential challenges and how to address them`,
-    includeContext: "thisServer" as const,
-    temperature: 0.4,
     maxTokens: 3500,
     stopSequences: ["[END]"]
   };
