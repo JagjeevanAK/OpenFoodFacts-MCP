@@ -3,6 +3,12 @@ import { z } from "zod";
 import { searchProducts, getProductByBarcode } from "./product-search.js";
 import { requestSampling, createRecipeSuggestionRequest, getResponseText } from "../sampling/sampling-service.js";
 import { logger } from '../transport/transports.js';
+import { registerCategoryTools } from './category-tools.js';
+import { registerNutritionTools } from './nutrition-tools.js';
+import { registerInsightsTools } from './insights-tools.js';
+import { registerPriceTools } from './price-tools.js';
+export * from './types.js';
+export * from './helpers.js';
 
 /**
  * Flexible product lookup - accepts either barcode or product name.
@@ -38,13 +44,17 @@ async function findProduct(nameOrBarcode: string): Promise<any> {
   return null;
 }
 
-// Schema definitions
+// Schema definitions for core tools
 const searchSchema = { query: z.string(), page: z.number().default(1), pageSize: z.number().default(10) };
 const barcodeSchema = { barcode: z.string() };
 const productSchema = { nameOrBarcode: z.string() };
 const compareSchema = { nameOrBarcode1: z.string(), nameOrBarcode2: z.string() };
 
+/**
+ * Register all MCP tools with the server
+ */
 export function registerTools(server: McpServer): void {
+
   server.registerTool('searchProducts', {
     description: 'Search products by name, brand, or category',
     inputSchema: searchSchema
@@ -57,7 +67,6 @@ export function registerTools(server: McpServer): void {
     }
   });
 
-  // getProductByBarcode - direct barcode lookup
   server.registerTool('getProductByBarcode', {
     description: 'Get product details by barcode (EAN/UPC)',
     inputSchema: barcodeSchema
@@ -160,5 +169,16 @@ export function registerTools(server: McpServer): void {
     }
   });
 
-  logger.info("OpenFoodFacts tools registered");
+  logger.info("Core OpenFoodFacts tools registered");
+
+  registerCategoryTools(server);
+
+  registerNutritionTools(server);
+
+  registerInsightsTools(server);
+
+  registerPriceTools(server);
+  registerPriceTools(server);
+
+  logger.info("All OpenFoodFacts MCP tools registered successfully");
 }

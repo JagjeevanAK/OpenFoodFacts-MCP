@@ -2,59 +2,46 @@ import { describe, it, expect } from 'vitest';
 import { handleStaticResource } from '../../src/resources/static-resources';
 
 describe('Static Resources Handler', () => {
-  describe('handleStaticResource', () => {
-    it('should return project info for info URI', () => {
-      const uri = 'openfoodfacts://info';
-      const result = handleStaticResource(uri);
+  it('should return help guide content', () => {
+    const result = handleStaticResource('openfoodfacts://help');
 
-      expect(result).toEqual({
-        contents: [{
-          uri,
-          text: expect.stringContaining('Open Food Facts'),
-          mimeType: 'application/json'
-        }]
-      });
+    expect(result.contents[0].uri).toBe('openfoodfacts://help');
+    expect(result.contents[0].text).toContain('Quick Help');
+    expect(result.contents[0].mimeType).toBe('text/markdown');
+  });
 
-      expect(result.contents[0].text).toContain('database');
-    });
+  it('should return nutriscore guide', () => {
+    const result = handleStaticResource('openfoodfacts://nutriscore-guide');
 
-    it('should return database schema documentation for schema URI', () => {
-      const uri = 'openfoodfacts://schema';
-      const result = handleStaticResource(uri);
+    expect(result.contents[0].text).toContain('Nutri-Score');
+  });
 
-      expect(result).toEqual({
-        contents: [{
-          uri,
-          text: expect.stringContaining('Open Food Facts Database Schema Overview')
-        }]
-      });
+  it('should return ecoscore guide', () => {
+    const result = handleStaticResource('openfoodfacts://ecoscore-guide');
 
-      expect(result.contents[0].text).toContain('Products Collection');
-      expect(result.contents[0].text).toContain('Taxonomies');
-    });
+    expect(result.contents[0].text).toContain('Eco-Score');
+  });
 
-    it('should return categories taxonomy for taxonomy/categories URI', () => {
-      const uri = 'openfoodfacts://taxonomy/categories';
-      const result = handleStaticResource(uri);
+  it('should return allergens list', () => {
+    const result = handleStaticResource('openfoodfacts://allergens-list');
 
-      expect(result).toEqual({
-        contents: [{
-          uri,
-          text: expect.stringContaining('Taxonomy: categories'),
-          metadata: {
-            taxonomyId: 'categories',
-            contentType: 'text/plain'
-          }
-        }]
-      });
+    expect(result.contents[0].text).toContain('Allergens');
+  });
 
-      expect(result.contents[0].text).toContain('Food Categories');
-    });
+  it('should return additives guide', () => {
+    const result = handleStaticResource('openfoodfacts://additives-guide');
 
-    it('should throw error for unknown static resource URI', () => {
-      const uri = 'openfoodfacts://unknown';
+    expect(result.contents[0].text).toContain('Additives');
+  });
 
-      expect(() => handleStaticResource(uri)).toThrow(`Static resource not found: ${uri}`);
-    });
+  it('should return nova guide', () => {
+    const result = handleStaticResource('openfoodfacts://nova-guide');
+
+    expect(result.contents[0].text).toContain('NOVA');
+  });
+
+  it('should throw for unknown resource', () => {
+    expect(() => handleStaticResource('openfoodfacts://unknown'))
+      .toThrow('Resource not found: openfoodfacts://unknown');
   });
 });

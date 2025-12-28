@@ -1,10 +1,9 @@
-import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import express from 'express';
 import { setupStdioTransport, setupHttpTransport, logger } from './transport/transports.js';
 import { serverConfig } from './config/server-config.js';
 import { handleStaticResource } from './resources/static-resources.js';
-import { handleTaxonomy } from './resources/taxonomy.js';
 import { registerTools } from './tools/index.js';
 
 /**
@@ -12,7 +11,6 @@ import { registerTools } from './tools/index.js';
  * The server can use either stdio (for VS Code extension) or HTTP (for browser clients)
  */
 export async function startServer() {
-  // Initialize the MCP server with our config using McpServer
   const server = new McpServer(serverConfig, {
     capabilities: {
       resources: {},
@@ -21,71 +19,81 @@ export async function startServer() {
     }
   });
 
-  // Register food-related MCP tools using new registerTool API
   registerTools(server);
 
-  // Register static resources using new registerResource API
   server.registerResource(
-    'info',
-    'openfoodfacts://info',
+    'help',
+    'openfoodfacts://help',
     {
-      title: 'Project Information',
-      description: 'Overview of the Open Food Facts project',
-      mimeType: 'application/json'
+      title: 'Quick Help Guide',
+      description: 'How to use the Open Food Facts tools - quick reference',
+      mimeType: 'text/markdown'
     },
     async (uri) => handleStaticResource(uri.href)
   );
 
   server.registerResource(
-    'schema',
-    'openfoodfacts://schema',
+    'nutriscore-guide',
+    'openfoodfacts://nutriscore-guide',
     {
-      title: 'Database Schema',
-      description: 'Information about the Open Food Facts data model',
-      mimeType: 'text/plain'
+      title: 'Nutri-Score Guide',
+      description: 'Understanding Nutri-Score health ratings (A-E)',
+      mimeType: 'text/markdown'
     },
     async (uri) => handleStaticResource(uri.href)
   );
 
-
-
   server.registerResource(
-    'categories-taxonomy',
-    'openfoodfacts://taxonomy/categories',
+    'ecoscore-guide',
+    'openfoodfacts://ecoscore-guide',
     {
-      title: 'Categories Taxonomy',
-      description: 'Food categories taxonomy used in Open Food Facts',
-      mimeType: 'text/plain'
+      title: 'Eco-Score Guide',
+      description: 'Understanding Eco-Score environmental ratings (A-E)',
+      mimeType: 'text/markdown'
     },
     async (uri) => handleStaticResource(uri.href)
   );
 
-  // Register dynamic taxonomy resources
   server.registerResource(
-    'taxonomy',
-    new ResourceTemplate('openfoodfacts://taxonomy/{type}', { list: undefined }),
+    'allergens-list',
+    'openfoodfacts://allergens-list',
     {
-      title: 'Taxonomy Data',
-      description: 'Access various Open Food Facts taxonomies (allergens, additives, ingredients, etc.)',
-      mimeType: 'application/json'
+      title: 'Allergens Reference',
+      description: 'Common food allergens and where they hide',
+      mimeType: 'text/markdown'
     },
-    async (uri, { type }) => {
-      // Skip categories as it's handled above
-      if (type === 'categories') {
-        return handleStaticResource(uri.href);
-      }
-      return await handleTaxonomy(uri.href, uri);
-    }
+    async (uri) => handleStaticResource(uri.href)
   );
 
-  // Register prompts using new registerPrompt API
+  server.registerResource(
+    'additives-guide',
+    'openfoodfacts://additives-guide',
+    {
+      title: 'Food Additives Guide',
+      description: 'Understanding E-numbers and food additives',
+      mimeType: 'text/markdown'
+    },
+    async (uri) => handleStaticResource(uri.href)
+  );
+
+  server.registerResource(
+    'nova-guide',
+    'openfoodfacts://nova-guide',
+    {
+      title: 'NOVA Processing Guide',
+      description: 'Understanding food processing levels (1-4)',
+      mimeType: 'text/markdown'
+    },
+    async (uri) => handleStaticResource(uri.href)
+  );
+
   server.registerPrompt(
     'analyze-product',
     {
       title: 'Analyze Product',
-      description: 'Analyze a food product based on its barcode',
+      description: 'Get a detailed health analysis of any food product',
       argsSchema: {
-        barcode: z.string().describe('The product barcode (EAN, UPC, etc.)')
+        barcode: z.string().describe('Product barcode or name')
       }
     },
     ({ barcode }) => ({
@@ -94,7 +102,7 @@ export async function startServer() {
           role: 'user',
           content: {
             type: 'text',
-            text: `Please analyze the food product with barcode ${barcode}. Use the getProductByBarcode tool to fetch product details, then provide a comprehensive nutritional analysis including health implications, ingredient quality, and dietary considerations.`
+            text: `Analyze the food product "${barcode}". Provide a comprehensive nutritional analysis including health implications, ingredient quality, allergens, and dietary considerations.`
           }
         }
       ]
@@ -105,19 +113,19 @@ export async function startServer() {
     'compare-products',
     {
       title: 'Compare Products',
-      description: 'Compare nutrition information between two products',
+      description: 'Compare two products to find the healthier option',
       argsSchema: {
-        barcode1: z.string().describe('First product barcode'),
-        barcode2: z.string().describe('Second product barcode')
+        product1: z.string().describe('First product (barcode or name)'),
+        product2: z.string().describe('Second product (barcode or name)')
       }
     },
-    ({ barcode1, barcode2 }) => ({
+    ({ product1, product2 }) => ({
       messages: [
         {
           role: 'user',
           content: {
             type: 'text',
-            text: `Please compare the two food products with barcodes ${barcode1} and ${barcode2}. Use the getProductByBarcode tool for each product, then provide a detailed comparison of their nutritional values, ingredients, health scores, and help me understand which is the better choice for different dietary needs.`
+            text: `Compare "${product1}" and "${product2}". Tell me which is healthier and why, comparing nutritional values, ingredients, and health scores.`
           }
         }
       ]
@@ -125,28 +133,71 @@ export async function startServer() {
   );
 
   server.registerPrompt(
-    'check-additives',
+    'find-healthy-alternatives',
     {
-      title: 'Check Additives',
-      description: 'Check if a product contains questionable additives',
+      title: 'Find Healthy Alternatives',
+      description: 'Find healthier alternatives to a product',
       argsSchema: {
-        barcode: z.string().describe('The product barcode (EAN, UPC, etc.)')
+        product: z.string().describe('Product to find alternatives for')
       }
     },
-    ({ barcode }) => ({
+    ({ product }) => ({
       messages: [
         {
           role: 'user',
           content: {
             type: 'text',
-            text: `Please check the food product with barcode ${barcode} for any questionable additives or ingredients. Use the getProductByBarcode tool to fetch the product details, then analyze the additives list and highlight any ingredients that may be concerning from a health perspective.`
+            text: `I want healthier alternatives to "${product}". Search for similar products with better Nutri-Score ratings and fewer additives.`
           }
         }
       ]
     })
   );
 
+  server.registerPrompt(
+    'check-allergens',
+    {
+      title: 'Check Allergens',
+      description: 'Check if a product is safe for your allergies',
+      argsSchema: {
+        product: z.string().describe('Product barcode or name'),
+        allergens: z.string().describe('Your allergens (comma-separated)')
+      }
+    },
+    ({ product, allergens }) => ({
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `Check if "${product}" is safe for someone allergic to: ${allergens}. Include any traces warnings.`
+          }
+        }
+      ]
+    })
+  );
 
+  server.registerPrompt(
+    'whats-for-dinner',
+    {
+      title: "What's for Dinner?",
+      description: 'Get recipe ideas using a product',
+      argsSchema: {
+        product: z.string().describe('Main ingredient or product')
+      }
+    },
+    ({ product }) => ({
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `Suggest healthy recipe ideas using "${product}" as a main ingredient. Include nutritional tips.`
+          }
+        }
+      ]
+    })
+  );
 
   if (process.env.TRANSPORT === 'stdio') {
     await setupStdioTransport(server);

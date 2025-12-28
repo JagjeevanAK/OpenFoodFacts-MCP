@@ -2,18 +2,6 @@
 
 This is a Model Context Protocol (MCP) server implementation for Open Food Facts. It enables AI assistants to access food product information, providing nutritional analysis, product comparisons, and recipe suggestions using the official [Model Context Protocol](https://modelcontextprotocol.io/) specification.
 
-## Overview
-
-### What is the Model Context Protocol?
-
-The Model Context Protocol (MCP) is a standardized way for AI assistants to communicate with external data sources. This server connects AI tools to the Open Food Facts database, allowing them to:
-
-- Search for food products
-- Access detailed nutritional information
-- Analyze product health scores
-- Compare products
-- Suggest recipes
-
 ### Benefits for Food-Aware Consumers
 
 This MCP server enables:
@@ -25,13 +13,41 @@ This MCP server enables:
 
 ## Available Tools
 
-### Food Product Tools
+### Core Product Tools
 
 - **searchProducts**: Search for products in the Open Food Facts database by name, brand, category, or other keywords
 - **getProductByBarcode**: Get detailed information about a product by its barcode (EAN, UPC, etc.)
 - **analyzeProduct**: Get AI-powered nutritional analysis of a food product
 - **compareProducts**: Compare two products with AI-powered insights
 - **suggestRecipes**: Get AI-powered recipe suggestions using a product
+
+### Category & Search Tools
+
+- **searchByCategory**: Search products within a specific food category (e.g., beverages, snacks, dairy, cereals)
+- **searchByBrand**: Find all products from a specific brand
+- **advancedSearch**: Advanced product search with multiple filters including category, brand, Nutri-Score, Eco-Score, NOVA group, allergen-free options, labels, and country
+- **autocomplete**: Get autocomplete suggestions for categories, brands, labels, ingredients, allergens, or additives
+
+### Nutrition & Health Tools
+
+- **getNutriScore**: Get the Nutri-Score grade (A-E) for a product - quick health assessment at a glance
+- **getEcoScore**: Get the Eco-Score (environmental impact rating A-E) for a product
+- **getAdditivesInfo**: List all additives in a product with their E-numbers and NOVA processing level
+- **getAllergenCheck**: Check if a product contains a specific allergen (gluten, milk, eggs, nuts, peanuts, soy, fish, shellfish, etc.)
+- **checkMultipleAllergens**: Check if a product contains any of multiple allergens at once
+
+### AI Insights Tools
+
+- **getProductAIQuestions**: Get AI-generated questions about a product that need human verification
+- **getRandomAIQuestions**: Get random AI-generated questions from Robotoff that need human verification - great for community contribution
+- **getProductInsights**: Get AI-generated insights about products (detected labels, categories, ingredients issues, etc.)
+- **getInsightTypes**: Get a summary of available AI insight types in Robotoff
+
+### Price Tools
+
+- **getProductPrices**: Get price history and current prices for a product from Open Prices
+- **searchPrices**: Search for prices with filters (currency, country, date range)
+- **getRecentPrices**: Get recently added prices to discover what's available
 
 ## Getting Started
 
@@ -154,23 +170,50 @@ Here are natural ways to ask your AI assistant to use the Open Food Facts tools:
 - "Give me recipe ideas for quinoa"
 - "What recipes can I make with the product 3017620422003?"
 
+### Category & Brand Searches
+
+- "Show me all products in the beverages category"
+- "Find all Nestlé products"
+- "Search for organic products with Nutri-Score A"
+- "Find vegan snacks with good Eco-Score"
+
+### Allergen Checks
+
+- "Does Nutella contain gluten?"
+- "Check if this product is safe for someone allergic to milk and eggs"
+- "Is barcode 3017620422003 peanut-free?"
+- "What allergens are in Cheerios?"
+
+### Price Lookups
+
+- "What's the current price of Nutella?"
+- "Show me recent prices for products in France"
+- "Compare prices for barcode 3017620422003"
+
 ## Resources and Prompts
 
 The MCP server provides helpful resources and prompts:
 
 ### Resources
 
-- **Project Information**: Overview of Open Food Facts
-- **Database Schema**: Understanding the data structure
-- **Food Categories**: Taxonomy of food categories
+The server provides educational resources to help you understand food data:
+
+- **Quick Help Guide**: How to use the Open Food Facts tools - quick reference
+- **Nutri-Score Guide**: Understanding Nutri-Score health ratings (A-E)
+- **Eco-Score Guide**: Understanding Eco-Score environmental ratings (A-E)
+- **Allergens Reference**: Common food allergens and where they hide
+- **Food Additives Guide**: Understanding E-numbers and food additives
+- **NOVA Processing Guide**: Understanding food processing levels (1-4)
 
 ### Prompts
 
-Pre-configured prompts help you get started:
+Pre-configured prompts help you get started quickly:
 
 - **analyze-product**: Get detailed nutritional analysis
 - **compare-products**: Compare two products side-by-side
-- **check-additives**: Check for questionable additives
+- **find-healthy-alternatives**: Find healthier alternatives to a product
+- **check-allergens**: Check if a product is safe for your allergies
+- **whats-for-dinner**: Get recipe ideas using a product
 
 ## How It Works
 
@@ -228,14 +271,33 @@ as an ingredient
 
 ### Server Architecture
 
-- `src/server.ts`: Core MCP server implementation
-- `src/tools/`: Food product tools
-  - `index.ts`: All food tools (search, barcode lookup, AI analysis)
-  - `product-search.ts`: Product search utilities
-- `src/resources/`: Resource handlers
-- `src/prompts/`: Pre-configured prompts
-- `src/sampling/`: AI model integration
-- `src/transport/`: Communication layer (stdio, HTTP)
+The server follows a modular architecture for maintainability and scalability:
+
+**Core Server**
+- `src/index.ts`: Entry point
+- `src/server.ts`: Core MCP server implementation with resource and prompt registration
+- `src/cli.ts`: CLI interface for development
+
+**Tools (Modular Design)**
+- `src/tools/index.ts`: Tool registration orchestrator and core product tools
+- `src/tools/product-search.ts`: Product search and barcode lookup utilities
+- `src/tools/category-tools.ts`: Category and brand search tools
+- `src/tools/nutrition-tools.ts`: Nutrition scores, allergen checks, and additive information
+- `src/tools/insights-tools.ts`: AI-generated insights from Robotoff
+- `src/tools/price-tools.ts`: Product pricing data from Open Prices
+- `src/tools/types.ts`: Shared type definitions and interfaces
+- `src/tools/helpers.ts`: Reusable helper functions for all tools
+
+**Resources & Services**
+- `src/resources/`: Resource handlers for guides and documentation
+  - `resource-registry.ts`: Resource registration system
+  - `static-resources.ts`: Static resource content (guides, references)
+- `src/sampling/`: AI model integration for analysis and recipe generation
+  - `sampling-service.ts`: MCP sampling integration for AI-powered features
+
+**Infrastructure**
+- `src/transport/`: Communication layer (stdio for CLI/editors, HTTP for browsers)
+- `src/config/`: Server configuration
 
 ### Data Source
 
@@ -301,4 +363,5 @@ This project is licensed under the GNU Affero General Public License v3.0, consi
 
 ---
 
-**Made with ❤️ for food-aware consumers everywhere**
+**Made with care for food-aware consumers everywhere**
+

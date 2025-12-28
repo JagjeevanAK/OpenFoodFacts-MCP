@@ -1,7 +1,13 @@
+/**
+ * MCP Sampling Service
+ * 
+ * Provides AI completion capabilities via connected LLM clients.
+ * Used for product analysis, comparisons, and recipe suggestions.
+ */
+
 import { CreateMessageResult } from "@modelcontextprotocol/sdk/types.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-
 
 export interface SamplingRequest {
   messages: Array<{
@@ -14,9 +20,7 @@ export interface SamplingRequest {
     }
   }>;
   modelPreferences?: {
-    hints?: Array<{
-      name?: string;
-    }>;
+    hints?: Array<{ name?: string }>;
     costPriority?: number;
     speedPriority?: number;
     intelligencePriority?: number;
@@ -28,14 +32,6 @@ export interface SamplingRequest {
   stopSequences?: string[];
   metadata?: Record<string, unknown>;
 }
-
-/**
- * Request a completion from an LLM via the connected client
- * 
- * @param mcpServer MCP server instance
- * @param request Sampling request parameters
- * @returns The LLM completion response
- */
 
 const CreateMessageResultSchema = z.object({
   model: z.string(),
@@ -49,6 +45,9 @@ const CreateMessageResultSchema = z.object({
   }),
 });
 
+/**
+ * Request a completion from an LLM via the connected client
+ */
 export async function requestSampling(
   mcpServer: McpServer,
   request: SamplingRequest
@@ -76,8 +75,7 @@ export async function requestSampling(
 }
 
 /**
- * Extract text from a sampling response content
- * Handles the union type (text | image | audio) safely
+ * Extract text from a sampling response
  */
 export function getResponseText(response: CreateMessageResult): string {
   if (response.content.type === 'text') {
@@ -87,92 +85,9 @@ export function getResponseText(response: CreateMessageResult): string {
 }
 
 /**
- * Creates a completion request for analyzing a food product
- * 
- * @param productData JSON data about the food product
- * @returns Sampling request configuration
- */
-export function createProductAnalysisRequest(productData: any): SamplingRequest {
-  return {
-    messages: [
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text: `Analyze this food product data from Open Food Facts and provide nutritional insights:\n\n${JSON.stringify(productData, null, 2)}`
-        }
-      }
-    ],
-    modelPreferences: {
-      hints: [
-        { name: "claude-3" },
-        { name: "gemini-2.0-flash" },
-        { name: "gemini-2.0" },
-        { name: "gemini-2.5-pro" },
-        { name: "sonnet" },
-        { name: "gpt-4.1" },
-        { name: "gpt-4o" }
-      ],
-      intelligencePriority: 0.8,
-      speedPriority: 0.5,
-      costPriority: 0.3
-    },
-    systemPrompt: "You are a nutrition expert analyzing food product data. Provide detailed insights about the nutritional quality, ingredients, and potential health impacts of this product. Include information about allergens, additives, and nutrition scores where available.",
-    includeContext: "thisServer",
-    temperature: 0.2,
-    maxTokens: 2000,
-    stopSequences: ["[END]"]
-  };
-}
-
-/**
- * Creates a completion request for comparing two food products
- * 
- * @param product1Data JSON data about the first food product
- * @param product2Data JSON data about the second food product
- * @returns Sampling request configuration
- */
-export function createProductComparisonRequest(product1Data: any, product2Data: any): SamplingRequest {
-  return {
-    messages: [
-      {
-        role: "user",
-        content: {
-          type: "text",
-          text: `Compare these two food products and determine which one is healthier and why:\n\nProduct 1:\n${JSON.stringify(product1Data, null, 2)}\n\nProduct 2:\n${JSON.stringify(product2Data, null, 2)}`
-        }
-      }
-    ],
-    modelPreferences: {
-      hints: [
-        { name: "claude-3" },
-        { name: "gemini-2.0-flash" },
-        { name: "gemini-2.0" },
-        { name: "gemini-2.5-pro" },
-        { name: "sonnet" },
-        { name: "gpt-4.1" },
-        { name: "gpt-4o" }
-      ],
-      intelligencePriority: 0.9,
-      speedPriority: 0.4,
-      costPriority: 0.3
-    },
-    systemPrompt: "You are a nutrition expert comparing food products. Analyze the nutritional information, ingredients, and additives of both products. Provide a clear comparison and determine which product is healthier based on nutritional content, processing level, additives, and overall quality.",
-    includeContext: "thisServer",
-    temperature: 0.1,
-    maxTokens: 3000,
-    stopSequences: ["[END]"]
-  };
-}
-
-/**
- * Creates a completion request for generating healthy recipe suggestions based on product
- * 
- * @param productData JSON data about the food product
- * @returns Sampling request configuration
+ * Creates a recipe suggestion request for a product
  */
 export function createRecipeSuggestionRequest(productData: any): SamplingRequest {
-  // Extract key product properties for contextual recipe generation
   const productName = productData.product_name || "this product";
   const category = productData.categories || "food item";
   const ingredients = productData.ingredients_text || "";
@@ -186,46 +101,34 @@ export function createRecipeSuggestionRequest(productData: any): SamplingRequest
         role: "user",
         content: {
           type: "text",
-          text: `Generate personalized recipe suggestions for ${productName} (${brands}) with varied cooking methods and health profiles. Consider its nutritional profile: Energy ${nutriments.energy_100g || "unknown"} kcal, Fat ${nutriments.fat_100g || "unknown"}g, Proteins ${nutriments.proteins_100g || "unknown"}g, Carbs ${nutriments.carbohydrates_100g || "unknown"}g.` +
-            `\n\nProduct information:\nCategory: ${category}\nIngredients: ${ingredients}\nPotential allergens: ${allergens}`
+          text: `Generate recipe suggestions for ${productName} (${brands}). ` +
+            `Nutritional profile: Energy ${nutriments.energy_100g || "unknown"} kcal, ` +
+            `Fat ${nutriments.fat_100g || "unknown"}g, ` +
+            `Proteins ${nutriments.proteins_100g || "unknown"}g, ` +
+            `Carbs ${nutriments.carbohydrates_100g || "unknown"}g.\n\n` +
+            `Category: ${category}\nIngredients: ${ingredients}\nAllergens: ${allergens}`
         }
       }
     ],
     modelPreferences: {
-      hints: [
-        { name: "claude-3" },
-        { name: "gemini-2.0-flash" },
-        { name: "gemini-2.0" },
-        { name: "gemini-2.5-pro" },
-        { name: "sonnet" },
-        { name: "gpt-4.1" },
-        { name: "gpt-4o" }
-      ],
+      hints: [{ name: "claude-3" }, { name: "gpt-4o" }],
       intelligencePriority: 0.8,
-      speedPriority: 0.5,
-      costPriority: 0.3
+      speedPriority: 0.5
     },
-    systemPrompt: `You are a creative culinary nutritionist specializing in personalized recipe development. Your task is to generate diverse recipe suggestions using the specified product.
+    systemPrompt: `You are a creative culinary nutritionist. Generate 4 recipe suggestions:
+1. LOW-CALORIE: Light meal focusing on weight management
+2. PROTEIN-RICH: Recipe for fitness enthusiasts  
+3. QUICK & EASY: Minimal prep and cooking time
+4. FAMILY-FRIENDLY: Balanced meal for all ages
 
-    For the given product, create 4 unique recipe suggestions in these different categories:
-    1. LOW-CALORIE OPTION: A light meal or snack focusing on weight management
-    2. PROTEIN-RICH OPTION: A recipe maximizing protein content for fitness enthusiasts
-    3. QUICK & EASY: A simple recipe requiring minimal preparation and cooking time
-    4. FAMILY-FRIENDLY: A balanced meal appealing to adults and children
-    
-    For each recipe, provide:
-    - Creative recipe name
-    - Complete ingredient list with measurements
-    - Brief preparation instructions
-    - Approximate nutritional values per serving
-    - A health benefit highlight
-    
-    Adapt recipes to work with the product's characteristics. Consider complementary ingredients that enhance its nutritional profile. If the product contains allergens, suggest alternatives where possible.
-    
-    Present your response in a clean, organized format with clear headings and sections.`,
+For each recipe, provide:
+- Recipe name
+- Ingredient list with measurements
+- Brief preparation steps
+- Approximate nutrition per serving
+- Health benefit highlight`,
     includeContext: "thisServer",
     temperature: 0.7,
-    maxTokens: 3500,
-    stopSequences: ["[END]"]
+    maxTokens: 3500
   };
 }
