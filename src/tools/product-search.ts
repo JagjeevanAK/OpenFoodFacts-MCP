@@ -132,7 +132,8 @@ export async function getProductByBarcode(barcode: string) {
     }
 
     // Cast to any for easier access to fields since the SDK typing is complex
-    const product: any = result.data;
+    // The V3 API nests the actual product fields under `.product`, not directly on `.data`.
+    const product: any = result.data.product;
 
     // Return the product information with selected fields
     return {
